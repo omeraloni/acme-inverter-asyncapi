@@ -1,0 +1,75 @@
+asyncapi: '2.0.0'
+info:
+  title: SolarEdge API
+  version: '1.0.0'
+  description: |
+    The SolarEdge API provides you metrics from your SolarEdge PV inverter
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0'
+
+servers:
+  mosquitto:
+    url: mqtt://test.mosquitto.org
+    protocol: mqtt
+
+channels:
+  solaredge/{id}/metrics:
+    subscribe:
+      summary: Inform about new metrics.
+      operationId: onMetricsReceived
+      message:
+        payload:
+          type: object
+          properties:
+            timestamp:
+              $ref: '#/components/schemas/Timestamp'            
+            ac_power:
+              $ref: '#/components/schemas/Phases'
+              description: AC power production
+            ac_freq:
+              $ref: '#/components/schemas/Phases'
+              description: Grid AC frequency
+            ac_voltage:
+              $ref: '#/components/schemas/Phases'
+              description: Grid AC voltage              
+
+  solaredge/{id}/event:
+    subscribe:
+      summary: Inform about incoming events.
+      operationId: onEventReceived
+      message:
+        payload:
+          $ref: '#/components/schemas/Event'
+
+components:            
+  schemas:
+    Event:
+      type: object
+      properties:
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'        
+        code:
+          type: integer
+          description: Event code
+        name:
+          type: string
+          description: Event name
+        level:
+          type: string
+          description: Event level        
+          enum:
+            - info
+            - warning
+            - error
+            - debug
+    Timestamp:
+      type: string
+      format: date-time
+      description: Date and time when the message was sent
+    Phases:
+      type: array
+      itmes: float
+      minItems: 1
+      maxItems: 3
+      description: Array representaion of a 3 phase measurement, correlating to phase1, phase2 & phase3 
