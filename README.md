@@ -1,4 +1,4 @@
-# ACME Inverter ASyncAPI
+# ACME Solar Inverter ASyncAPI
 
 ## Requirements
 - Node.js v12.16+
