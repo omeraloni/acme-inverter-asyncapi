@@ -10,7 +10,7 @@ node:
 	cd ${BUILD}/node; npm install
 
 docs:
-	ag --force-write asyncapi.yaml @asyncapi/html-template -o docs
+	ag --debug --force-write asyncapi.yaml @asyncapi/html-template -o docs
 
 clean:
 	rm -dfr ${BUILD}
@@ -18,4 +18,4 @@ clean:
 run:
 	cd ${BUILD}/node; npm start
 
-.PHONY: clean
+.PHONY: all node docs clean run

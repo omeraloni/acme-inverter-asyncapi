@@ -3,7 +3,7 @@ info:
   title: ACME Inverter Company ASync API
   version: '1.0.0'
   description: |
-    The ASync API provides you metrics from your ACME PV inverter.
+    The ASync API provides you metrics and control over your ACME Solar inverter.
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
@@ -15,24 +15,60 @@ servers:
     protocolVersion: '3.1.1'
 
 channels:
-  acme/{id}/metrics:
+  acme/{id}/info:
+    description: Provide inverter information
     parameters:
       id:
         description: Id of the inverter
         schema:
           type: string
     publish:
-      summary: Inform about new metrics.
-      operationId: onMetricsReceived
+      summary: Inform about new info.
+      operationId: onInfoReceived
       message:
         payload:
-          $ref: '#/components/schemas/Metrics'
+          $ref: '#/components/schemas/Information'
       bindings:
         mqtt:
           qos: 1
           retain: true
           bindingVersion: 0.1.0
-
+  acme/{id}/inverter_metrics:
+    description: Provide inverter instantenious measurements
+    parameters:
+      id:
+        description: Id of the inverter
+        schema:
+          type: string
+    publish:
+      summary: Inform about new inverter metrics.
+      operationId: onInverterMetricsReceived
+      message:
+        payload:
+          $ref: '#/components/schemas/InverterMetrics'
+      bindings:
+        mqtt:
+          qos: 1
+          retain: true
+          bindingVersion: 0.1.0
+  acme/{id}/storage_metrics:
+    description: Provide storage instantenious measurements
+    parameters:
+      id:
+        description: Id of the inverter
+        schema:
+          type: string
+    publish:
+      summary: Inform about new storage metrics.
+      operationId: onStorageMetricsReceived
+      message:
+        payload:
+          $ref: '#/components/schemas/StorageMetrics'
+      bindings:
+        mqtt:
+          qos: 1
+          retain: true
+          bindingVersion: 0.1.0
   acme/{id}/event:
     parameters:
       id:
@@ -50,7 +86,32 @@ channels:
           qos: 0
           retain: false
           bindingVersion: 0.1.0
-
+  acme/{id}/power_control:
+    description: Control active/reactive power production
+    parameters:
+      id:
+        description: Id of the inverter
+        schema:
+          type: string
+    subscribe:
+      summary: Control active/reactive power production
+      operationId: onPowerControlReceived
+      message:
+        payload:
+          $ref: '#/components/schemas/PowerControl'
+  acme/{id}/storage_config:
+    description: Configure storage system
+    parameters:
+      id:
+        description: Id of the inverter
+        schema:
+          type: string
+    subscribe:
+      summary: Configure storage system
+      operationId: onStorageConfigReceived
+      message:
+        payload:
+          $ref: '#/components/schemas/StorageConfiguration'
 components:
   schemas:
     Timestamp:
@@ -64,37 +125,226 @@ components:
       minItems: 1
       maxItems: 3
       description: Array representaion of a 3 phase measurement, correlating to phase1, phase2 & phase3
-    Metrics:
+    InverterMetrics:
       type: object
       properties:
         timestamp:
           $ref: '#/components/schemas/Timestamp'
-        ac_power:
+        ac_current:
           $ref: '#/components/schemas/Phases'
-          description: AC power production
-        ac_freq:
-          $ref: '#/components/schemas/Phases'
-          description: Grid AC frequency
+          description: AC current (Amps)
+          example:
+            - 56.08
         ac_voltage:
           $ref: '#/components/schemas/Phases'
-          description: Grid AC voltage
+          description: AC voltage, line-to-line (Volt)
+          example:
+            - 240.41
+        ac_voltage_line_to_neutral:
+          $ref: '#/components/schemas/Phases'
+          description: AC voltage, line-to-neutral (Volt)
+        ac_active_power:
+          #$ref: '#/components/schemas/Phases'
+          type: number
+          description: Active power (Watt)
+          example:
+            - 13484.56
+        ac_freq:
+          #$ref: '#/components/schemas/Phases'
+          type: number
+          description: Grid frequency (Hz)
+          example:
+            - 50.01
+        ac_apparent_power:
+          #$ref: '#/components/schemas/Phases'
+          type: number
+          description: Apparent power (VA)
+        ac_reactive_power:
+          #$ref: '#/components/schemas/Phases'
+          type: number
+          description: Reactive power (VAR)
+        ac_power_factor:
+          $ref: '#/components/schemas/Phases'
+          description: Power factor
+        ac_energy_produced:
+          type: integer
+          format: int64
+          description: Lifetime AC production energy (Wh)
+          example: 7281954
+        ac_energy_consumed:
+          type: integer
+          format: int64
+          description: Lifetime AC charged energy (Wh)
+          example: 2521
+        solar_energy_produced:
+          type: integer
+          format: int64
+          description: Lifetime solar production energy (Wh)
+          example: 9596952
+        dc_current:
+          type: number
+          description: DC current (Amps)
+          example: 34.2
+        dc_voltage:
+          type: number
+          description: DC voltage (Volt)
+          example: 400.29
+        dc_power:
+          type: number
+          description: DC power (Watt)
+          example: 13689.91
+        temperature_cabinet:
+          type: number
+          description: Cabinet temperature (Celsius)
+          example: 81.2
+        status:
+          type: string
+          description: Inverter status
+          enum:
+            - Off
+            - Sleeping
+            - Starting
+            - MPPT
+            - Throttled
+            - Shutting down
+            - Fault
+            - Standby
+            - Vendor
+          example: MPPT
+        status_vendor:
+          type: string
+          description: Inverter status, vendor specific
+          example: None
+    StorageMetrics:
+      type: object
+      properties:
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        power:
+          type: number
+          description: Storage charge/discharge power
+        state_of_energy:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: State of energy (%)
+        status:
+          type: string
+          description: Storage system status
+          enum:
+            - Standby
+            - Charging
+            - Discharging
+            - Idle
+            - Maintenance
+            - Fault
+            - Sleeping
     Event:
       type: object
       properties:
         timestamp:
           $ref: '#/components/schemas/Timestamp'
-        code:
-          type: integer
-          description: Event code
         name:
           type: string
           description: Event name
-        level:
-          type: string
-          description: Event level
           enum:
-            - info
-            - warning
-            - error
-            - debug
+            - Ground fault
+            - DC over voltage
+            - AC disconnect
+            - DC disconnect
+            - Grid disconnect
+            - Cabinet open
+            - Manual shutdown
+            - Over temperature
+            - Over frequency
+            - Under frequency
+            - AC over voltage
+            - AC under voltage
+            - Blown string fuse
+            - Under temperature
+            - Memory loss
+            - HW test failure
+        type:
+          type: string
+          description: Event type
+          enum:
+            - Info
+            - Warning
+            - Error
+            - Debug
+          example: Error
       additionalProperties: false
+    Information:
+      type: object
+      properties:
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        serial_number:
+          type: string
+          description: Inverter serial serial_number
+          example: SJ0220-73011217-9D
+        manufacturer:
+          type: string
+          description: Inverter manufacturer
+          example: ACME Inverter Company
+        model:
+          type: string
+          description: Inverter model
+          example: ACME5000H-US00BNN4
+        versions:
+          type: array
+          description: Inverter software versions
+          items:
+            type: string
+          minItems: 3
+          maxItems: 6
+          example:
+            - 4.8.28
+            - 1.13.1500
+            - 2.19.2000
+      additionalProperties: false
+    PowerControl:
+      type: object
+      properties:
+        active_power_reference:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Set active power reference limit
+          example: 90
+        reactive_power_reference:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Set reactive power reference limit
+          example: 100
+        power_factor_reference:
+          type: number
+          minimum: -1.0
+          maximum: 1.0
+          description: Power factor reference
+          example: 0.96
+        active_power_priority:
+          type: boolean
+          description: Prefer active power over reactive power
+          example: true
+    StorageConfiguration:
+        type: object
+        properties:
+          mode:
+            type: string
+            description: Storage system operation mode
+            enum:
+              - Disabled
+              - Maximize self-consumption
+              - Time-of-Use
+              - Backup only
+            example: Maximize self-consumption
+          backup_resereved:
+            type: number
+            description: Reserved storage for backup operation (%)
+            minimum: 10
+            maximum: 100
+            example: 50
+
+
