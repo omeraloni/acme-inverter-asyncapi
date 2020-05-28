@@ -1,9 +1,9 @@
 asyncapi: '2.0.0'
 info:
-  title: SolarEdge ASync API
+  title: ACME Inverter Company ASync API
   version: '1.0.0'
   description: |
-    The SolarEdge ASync API provides you metrics from your SolarEdge PV inverter.
+    The ASync API provides you metrics from your ACME PV inverter.
   license:
     name: Apache 2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
@@ -15,7 +15,7 @@ servers:
     protocolVersion: '3.1.1'
 
 channels:
-  solaredge/{id}/metrics:
+  acme/{id}/metrics:
     parameters:
       id:
         description: Id of the inverter
@@ -33,7 +33,7 @@ channels:
           retain: true
           bindingVersion: 0.1.0
 
-  solaredge/{id}/event:
+  acme/{id}/event:
     parameters:
       id:
         description: Id of the inverter

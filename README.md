@@ -1,4 +1,4 @@
-# SolarEdge ASyncAPI
+# ACME Inverter ASyncAPI
 
 ## Requirements
 - Node.js v12.16+
