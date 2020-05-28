@@ -10,12 +10,12 @@ node:
 	cd ${BUILD}/node; npm install
 
 docs:
-	ag --force-write asyncapi.yaml @asyncapi/html-template -o ${BUILD}/docs
+	ag --force-write asyncapi.yaml @asyncapi/html-template -o docs
 
 clean:
 	rm -dfr ${BUILD}
 
 run:
 	cd ${BUILD}/node; npm start
-	
+
 .PHONY: clean
